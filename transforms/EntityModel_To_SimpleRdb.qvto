@@ -1,0 +1,152 @@
+/*
+ * The SimpleUML to RDB Sample demonstrates how to use QVT transformations for 
+ * transforming platform independent model to platform specific model. 
+ * 
+ * It also demonstrates the following basic features of QVT language: 
+ * helper queries, mapping guards, and resolution operations.
+ * 
+ * Sample model pim.simpleuml is included to be used as an input for the transformation.
+ */
+
+/*
+ * Two modeltypes are declared. The http NS URIs correspond to those used to register the 
+ * Ecore models in the environment. Alternatively, a workspace metamodel may be used 
+ * in conjunction with mappings defined in the project properties.
+ */
+// modeltype UML uses 'SimpleUML';
+ 
+ //modeltype RDB uses 'SimpleRDBMS';
+ 
+ 
+ modeltype ERM uses 'ERModel';
+ modeltype RDB uses 'SimpleRDBMS';
+
+ 
+
+/*
+ * The transformation signature declares that a UML modeltype is required as input, while an RDB
+ * modeltype is produced as an output.  The UML modeltype is referenced as 'uml' throughout the 
+ * transformation definition, while no name is needed for the output RDB modeltype.  Note that OCL 
+ * type and namespace notation are used in operational QVT (: and :: respectively).
+ */
+transformation EMModel_To_SimpleRdb(in erm : ERM, out RDB);
+
+/*
+ * The main entry point of the transformation.  The 'uml' reference to the input UML modeltype 
+ * instance is used to collect all rootObjects() of type Model.  The rootObjects() operation 
+ * is available on all QVT Model objects (extents) and returns those objects found at the 
+ * root of the input model.  The [UML::Model] statement following the call to rootObjects() 
+ * is shorthand notation for the imperative select (xselect) construct where the condition is 
+ * a type expression, which effectively performs a oclIsKindOf(UML::Model) with type recasting 
+ * as a sequence.
+ *
+ * The invocation of the model2RDBModel() mapping is done using an -> operator, which is a 
+ * shorthand notation for the imperative collect (xcollect) construct.  Alternatively, it could
+ * be written as uml.rootObjects()[UML::Model]->xcollect(a | a.map model2RDBModel());
+ */
+main() {
+	erm.objectsOfType(EM::Package) -> map packageToSchema(); 
+}
+
+/*
+ * This mapping creates an RDB Schema object from a UML Package.  It includes a when clause to 
+ * verify the passed Package contains persistent classes.  Look below to see the logic employed
+ * within the hasPersistentClasses() query.
+ *
+ * The name attributes map directly, while the elements reference is populated with RDB Table 
+ * objects mapped from persistent UML Class objects using a map invocation and similar 
+ * shorthand notation used above.
+ */
+mapping ERM::Package::packageToSchema() : RDB::Schema 
+	when { self.hasPersistentEntities() }
+{
+	name := self.name;
+	kind := self.kind;
+	tables := self.elements[ERM::Entity]->map persistentEntityToTable()->asOrderedSet()
+} 
+
+/*
+ * This mapping produces an RDB Table object from a UML persistent Class object. The when clause
+ * uses the isPersistent() query below to see if the Class has a 'persistent' string as one of 
+ * its stereotype strings.
+ *
+ * Again, the name attributes map directly.  The Class is mapped to a set of TableColumn objects
+ * using the class2columns() mapping, the results of which are sorted by name using the OCL 
+ * sortedBy() operation.  The primaryKey is set using the class2primaryKey() mapping, while 
+ * foreignKeys are set using a resolveIn function.  This will allow us to resolve RDB ForeignKey 
+ * objects created using the relationshipAttribute2foreignKey() mapping for each of the Class 
+ * attributes. 
+ */
+mapping ERM::Entity::persistentEntityToTable() : RDB::Table 
+	when { self.isPersistent() }
+{
+	name := self.name;
+	columns := self.attributes -> map attributeTocolumn()->sortedBy(name);
+	keys := self.keys -> map entityKeyToTableKey();
+	schema := self.resolveoneIn(ERM::Package::packageToSchema,RDB::Schema);
+}
+
+/*
+ * A PrimaryKey object is created from a Class by prefixing the name with 'PK' and resolving 
+ * one (the first) Table created from the Class in order to obtain its primary key columns 
+ * using a query.
+ */
+mapping ERM::Key::entityKeyToTableKey() : RDB::Key {
+	owner := self.resolveoneIn(ERM::Entity::persistentEntityToTable, RDB::Table);
+	columns := self.attribute_set -> map attributeTocolumn() -> sortedBy(name);
+}
+
+/*
+ * This mapping will create an OrderedSet of RDB TableColumn objects from a UML Class object.
+ * Similar to package2schemas(), this mapping has no population section, but just an init 
+ * that assigns the result based on the union of type mappings from the Class and its
+ * generalizations (Class extends DataType).
+ *
+ * Note that this mapping is defined for type UML::Class and also takes a UML::Class named 
+ * targetClass as a parameter.  This pattern is used in several places within this
+ * transformation definition to account for how generalization in the UML model is 
+ * mapped to columns in the RDB model.  As properties and inherited properties are 
+ * flattened into columns, the combined use of 'self' and 'target' parameter represent a
+ * way to allow multiple copies of columns for a given property source, as subsequent
+ * mapping invocations retrieve the same resulting columns from the trace model. 
+ */
+mapping ERM::Attribute::attributeTocolumn() : RDB::Column {
+	name := self.name;
+	kind := self.kind;
+	type := self.type.name;
+	owner := self.resolveoneIn(ERM::Entity::persistentEntityToTable, RDB::Table);
+	
+}
+
+/*
+ * This query returns true if the list of string stereotypes includes one
+ * equal to 'persistent'.
+ */
+query ERM::EMElement::isPersistent() : Boolean {
+	return self.kind->includes('persistent')
+}
+
+/*
+ * This query examines the contents of a Package to determine if there exists
+ * at least one Class that returns true for the isPersistent() query.
+ */
+query ERM::Package::hasPersistentEntities() : Boolean {
+	return self.elements->exists(
+		let c : ERM::Entity = oclAsType(ERM::Entity) in 
+			c.oclIsUndefined() implies c.isPersistent())
+}
+
+/*
+ * This helper returns the RDB primitive string corresponding to the passed 
+ * UML primitive string.  This helper produces no side effects and could be 
+ * written as a query, alternatively.
+ */
+helper umlPrimitive2rdbPrimitive(in name : String) : String {
+	return if name = 'String' then 'varchar' else
+		if name = 'Boolean' then 'int' else
+			if name = 'Integer' then 'int' else
+				name
+			endif
+		endif
+	endif
+}
