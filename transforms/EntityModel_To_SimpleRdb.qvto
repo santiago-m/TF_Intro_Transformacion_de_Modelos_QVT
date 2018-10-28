@@ -45,7 +45,7 @@ transformation EMModel_To_SimpleRdb(in erm : ERM, out RDB);
  * be written as uml.rootObjects()[UML::Model]->xcollect(a | a.map model2RDBModel());
  */
 main() {
-	erm.objectsOfType(EM::Package) -> map packageToSchema(); 
+	erm.objectsOfType(ERM::Package) -> map packageToSchema(); 
 }
 
 /*
