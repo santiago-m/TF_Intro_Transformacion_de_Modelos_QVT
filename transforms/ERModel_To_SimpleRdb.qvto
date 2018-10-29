@@ -29,7 +29,7 @@
  * transformation definition, while no name is needed for the output RDB modeltype.  Note that OCL 
  * type and namespace notation are used in operational QVT (: and :: respectively).
  */
-transformation EMModel_To_SimpleRdb(in erm : ERM, out RDB);
+transformation ERModel_To_SimpleRdb(in erm : ERM, out RDB);
 
 /*
  * The main entry point of the transformation.  The 'uml' reference to the input UML modeltype 
@@ -186,7 +186,7 @@ query ERM::Relation::is_1_to_1() : Boolean {
  * This query returns true if the list of string stereotypes includes one
  * equal to 'persistent'.
  */
-query ERM::EMElement::isPersistent() : Boolean {
+query ERM::ERMElement::isPersistent() : Boolean {
 	return self.kind->includes('persistent')
 }
 
