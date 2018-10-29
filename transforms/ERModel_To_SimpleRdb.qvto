@@ -58,12 +58,11 @@ main() {
  * shorthand notation used above.
  */
 mapping ERM::Package::packageToSchema() : RDB::Schema 
-	when { self.hasPersistentEntities() }
 {
 	name := self.name;
 	kind := self.kind;
 	let relationTables : Set(RDB::Table) = self.elements[ERM::Relation]->map relationToTable() ->flatten()-> asOrderedSet() in 
-		tables := relationTables -> union(self.elements[ERM::Entity] -> select(e : ERM::Entity | relationTables -> any(t : RDB::Table | t.name = e.name) = null) -> map persistentEntityToTable(null)->asOrderedSet());
+		tables := relationTables -> union(self.elements[ERM::Entity] -> select(e : ERM::Entity | not e.existTable(relationTables)) -> map persistentEntityToTable(null)->asOrderedSet());
 } 
 
 mapping ERM::Relation::relationToTable() : Set(RDB::Table)
@@ -95,7 +94,7 @@ mapping ERM::Relation::relation_n_to_n_ToTable(t1 : RDB::Table, t2 : RDB::Table)
 }
 
 mapping RDB::Table::foreignKeyFromTable() : RDB::ForeignKey {
-	let pk : RDB::Key = self.keys -> select(k : RDB::Key | k.kind = 'primary_key') -> any(true) in do
+	let pk : RDB::Key = self.keys -> select(k : RDB::Key | k.kind->includes('primary_key')) -> any(true) in do
 	{
 	columns := pk.columns;
 	refersTo := pk;
@@ -115,18 +114,23 @@ mapping RDB::Table::foreignKeyFromTable() : RDB::ForeignKey {
  * attributes. 
  */
 mapping ERM::Entity::persistentEntityToTable(t : RDB::Table) : RDB::Table 
-	when { self.isPersistent() }
 {
 	name := self.name;
 	if (t = null) {
 		columns := self.attributes -> map attributeTocolumn()->sortedBy(name);
 	}
 	else {
-		let pkcolumns : Set(RDB::Column) = t.keys -> select(k : RDB::Key | k.kind = 'primary_key') ->any(true).columns in
-			columns := self.attributes -> map attributeTocolumn() -> union(pkcolumns ->asSequence()) ->sortedBy(name);
+		let pkcolumns : Set(RDB::Column) = t.map foreignKeyFromTable() -> collect(fk : RDB::ForeignKey | fk.columns) -> any(true) in
+			columns := self.attributes -> map attributeTocolumn() ->asSet() -> union(pkcolumns) ->sortedBy(name);
 		foreignKeys := t.map foreignKeyFromTable();
 	};
-	keys := self.keys -> map entityKeyToTableKey();
+	if (not self.keys -> isEmpty()) {
+		keys := self.keys -> map entityKeyToTableKey() -> asSet() -> union( self.primary_key.map entityPKToTableKey() ->asSet() );	
+	}
+	else {
+		keys := self.primary_key.map entityPKToTableKey() -> asSet();
+	};
+	
 	schema := self.resolveoneIn(ERM::Package::packageToSchema,RDB::Schema);
 }
 
@@ -138,9 +142,12 @@ mapping ERM::Entity::persistentEntityToTable(t : RDB::Table) : RDB::Table
 mapping ERM::Key::entityKeyToTableKey() : RDB::Key {
 	owner := self.resolveoneIn(ERM::Entity::persistentEntityToTable, RDB::Table);
 	columns := self.attribute_set -> map attributeTocolumn() -> sortedBy(name);
-	if (self.oclIsTypeOf(ERM::Primary_Key)) {
-		kind := 'primary_key';
-	}
+}
+
+mapping ERM::Primary_Key::entityPKToTableKey() : RDB::Key {
+	owner := self.resolveoneIn(ERM::Entity::persistentEntityToTable, RDB::Table);
+	columns := self.attribute_set -> map attributeTocolumn() -> sortedBy(name);
+	kind := 'primary_key';
 }
 
 /*
@@ -163,12 +170,16 @@ mapping ERM::Attribute::attributeTocolumn() : RDB::Column {
 	type := self.type.name;
 }
 
+query ERM::Entity::existTable(tset : Set(RDB::Table)) : Boolean {
+	return tset -> collect(t : RDB::Table | t.name) ->includes(self.name);
+}
+
 query ERM::Relation::is_n_to_n() : Boolean {
 	return self.cardinality_1 = 'N' and self.cardinality_2 = 'N';
 }
 
 query ERM::Relation::is_1_to_1() : Boolean {
-	return self.cardinality_1.toInteger() = 1 and self.cardinality_2.toInteger() =  1;
+	return self.cardinality_1 = '1' and self.cardinality_2 = '1';
 }
 
 /*
