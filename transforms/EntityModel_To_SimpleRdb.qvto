@@ -62,8 +62,45 @@ mapping ERM::Package::packageToSchema() : RDB::Schema
 {
 	name := self.name;
 	kind := self.kind;
-	tables := self.elements[ERM::Entity]->map persistentEntityToTable()->asOrderedSet()
+	let relationTables : Set(RDB::Table) = self.elements[ERM::Relation]->map relationToTable() ->flatten()-> asOrderedSet() in 
+		tables := relationTables -> union(self.elements[ERM::Entity] -> select(e : ERM::Entity | relationTables -> any(t : RDB::Table | t.name = e.name) = null) -> map persistentEntityToTable(null)->asOrderedSet());
 } 
+
+mapping ERM::Relation::relationToTable() : Set(RDB::Table)
+{
+	if (self.is_n_to_n()) {
+		let t1 : RDB::Table = self.entity_1.map persistentEntityToTable(null), t2 : RDB::Table = self.entity_2.map persistentEntityToTable(null) in
+			t1.oclAsSet() ->including(t2) -> including(self.map relation_n_to_n_ToTable(t1, t2));
+	}
+	else {
+		if (self.cardinality_1 = 'N') {
+			let t2 : RDB::Table = self.entity_2.map persistentEntityToTable(null) in
+				t2.oclAsSet() -> including(self.entity_1.map persistentEntityToTable(t2));
+		}
+		else {
+			let t1 : RDB::Table = self.entity_1.map persistentEntityToTable(null) in
+				t1.oclAsSet() -> including(self.entity_2.map persistentEntityToTable(t1));
+		}
+	}
+}
+
+mapping ERM::Relation::relation_n_to_n_ToTable(t1 : RDB::Table, t2 : RDB::Table) : RDB::Table
+{
+	name := self.name;
+	kind := self.kind;
+	let keysColSet : Set(RDB::Column) = t1.keys -> collect(k : RDB::Key | k.columns) ->union(t2.keys -> collect(k : RDB::Key | k.columns)),
+		attrColSet : Set(RDB::Column) = self.attributes -> map attributeTocolumn() in
+		columns := keysColSet ->union(attrColSet);
+	foreignKeys := t1.oclAsSet() -> including(t2) -> map foreignKeyFromTable();
+}
+
+mapping RDB::Table::foreignKeyFromTable() : RDB::ForeignKey {
+	let pk : RDB::Key = self.keys -> select(k : RDB::Key | k.kind = 'primary_key') -> any(true) in do
+	{
+	columns := pk.columns;
+	refersTo := pk;
+	}
+}
 
 /*
  * This mapping produces an RDB Table object from a UML persistent Class object. The when clause
@@ -77,11 +114,18 @@ mapping ERM::Package::packageToSchema() : RDB::Schema
  * objects created using the relationshipAttribute2foreignKey() mapping for each of the Class 
  * attributes. 
  */
-mapping ERM::Entity::persistentEntityToTable() : RDB::Table 
+mapping ERM::Entity::persistentEntityToTable(t : RDB::Table) : RDB::Table 
 	when { self.isPersistent() }
 {
 	name := self.name;
-	columns := self.attributes -> map attributeTocolumn()->sortedBy(name);
+	if (t = null) {
+		columns := self.attributes -> map attributeTocolumn()->sortedBy(name);
+	}
+	else {
+		let pkcolumns : Set(RDB::Column) = t.keys -> select(k : RDB::Key | k.kind = 'primary_key') ->any(true).columns in
+			columns := self.attributes -> map attributeTocolumn() -> union(pkcolumns ->asSequence()) ->sortedBy(name);
+		foreignKeys := t.map foreignKeyFromTable();
+	};
 	keys := self.keys -> map entityKeyToTableKey();
 	schema := self.resolveoneIn(ERM::Package::packageToSchema,RDB::Schema);
 }
@@ -94,6 +138,9 @@ mapping ERM::Entity::persistentEntityToTable() : RDB::Table
 mapping ERM::Key::entityKeyToTableKey() : RDB::Key {
 	owner := self.resolveoneIn(ERM::Entity::persistentEntityToTable, RDB::Table);
 	columns := self.attribute_set -> map attributeTocolumn() -> sortedBy(name);
+	if (self.oclIsTypeOf(ERM::Primary_Key)) {
+		kind := 'primary_key';
+	}
 }
 
 /*
@@ -114,8 +161,14 @@ mapping ERM::Attribute::attributeTocolumn() : RDB::Column {
 	name := self.name;
 	kind := self.kind;
 	type := self.type.name;
-	owner := self.resolveoneIn(ERM::Entity::persistentEntityToTable, RDB::Table);
-	
+}
+
+query ERM::Relation::is_n_to_n() : Boolean {
+	return self.cardinality_1 = 'N' and self.cardinality_2 = 'N';
+}
+
+query ERM::Relation::is_1_to_1() : Boolean {
+	return self.cardinality_1.toInteger() = 1 and self.cardinality_2.toInteger() =  1;
 }
 
 /*
