@@ -24,6 +24,7 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="columns" upperBound="-1"
         eType="#//Column" eOpposite="#//Column/keys"/>
   </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Primary_Key" eSuperTypes="#//Key"/>
   <eClassifiers xsi:type="ecore:EClass" name="RModelElement" abstract="true">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="kind" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
