@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:simplerdbms="SimpleRDBMS" xsi:schemaLocation="SimpleRDBMS ../metamodelos/SimpleRDBMS.ecore">
   <simplerdbms:Schema name="alquiler_autos">
-    <tables/>
-    <tables/>
+    <tables name="Client" primary_key="/1">
+      <columns name="dni" type="String" foreignKeys="/0/@tables.1/@foreignKeys.0" keys="/1"/>
+    </tables>
+    <tables name="Vehicle" primary_key="/2">
+      <columns name="patent" type="String" keys="/2"/>
+      <foreignKeys refersTo="/1" columns="/0/@tables.0/@columns.0"/>
+    </tables>
   </simplerdbms:Schema>
-  <simplerdbms:Table name="Client">
-    <columns name="dni" foreignKeys="/2/@foreignKeys.0" keys="/1/@keys.0"/>
-    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Client" kind="primary_key" columns="/1/@columns.0"/>
-  </simplerdbms:Table>
-  <simplerdbms:Table name="Vehicle">
-    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Vehicle" kind="primary_key" columns="/3"/>
-    <foreignKeys refersTo="/1/@keys.0" columns="/1/@columns.0"/>
-  </simplerdbms:Table>
-  <simplerdbms:Column name="patent" keys="/2/@keys.0"/>
+  <simplerdbms:Primary_Key name="pk_Client" kind="primary_key" owner="/0/@tables.0" columns="/0/@tables.0/@columns.0"/>
+  <simplerdbms:Primary_Key name="pk_Vehicle" kind="primary_key" owner="/0/@tables.1" columns="/0/@tables.1/@columns.0"/>
 </xmi:XMI>
