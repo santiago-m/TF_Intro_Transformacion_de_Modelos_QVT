@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:simplerdbms="SimpleRDBMS" xsi:schemaLocation="SimpleRDBMS ../metamodelos/SimpleRDBMS.ecore">
-  <simplerdbms:Schema name="alquiler_autos">
-    <tables name="Client" primary_key="/1">
-      <columns name="dni" type="String" foreignKeys="/0/@tables.1/@foreignKeys.0" keys="/1"/>
-    </tables>
-    <tables name="Vehicle" primary_key="/2">
-      <columns name="patent" type="String" keys="/2"/>
-      <foreignKeys refersTo="/1" columns="/0/@tables.0/@columns.0"/>
-    </tables>
-  </simplerdbms:Schema>
-  <simplerdbms:Primary_Key name="pk_Client" kind="primary_key" owner="/0/@tables.0" columns="/0/@tables.0/@columns.0"/>
-  <simplerdbms:Primary_Key name="pk_Vehicle" kind="primary_key" owner="/0/@tables.1" columns="/0/@tables.1/@columns.0"/>
-</xmi:XMI>
+<simplerdbms:Schema xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:simplerdbms="SimpleRDBMS" xsi:schemaLocation="SimpleRDBMS ../metamodelos/SimpleRDBMS.ecore" name="alquiler_autos">
+  <tables name="Client" primary_key="//@tables.0/@keys.0">
+    <columns name="dni" type="String" foreignKeys="//@tables.2/@foreignKeys.0" keys="//@tables.0/@keys.0 //@tables.2/@keys.0"/>
+    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Client" kind="primary_key" columns="//@tables.0/@columns.0" pk_owner="//@tables.0"/>
+  </tables>
+  <tables name="Vehicle" primary_key="//@tables.1/@keys.0">
+    <columns name="patent" type="String" foreignKeys="//@tables.2/@foreignKeys.1" keys="//@tables.1/@keys.0 //@tables.2/@keys.0"/>
+    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Vehicle" kind="primary_key" columns="//@tables.1/@columns.0" pk_owner="//@tables.1"/>
+  </tables>
+  <tables name="relacion_nn" primary_key="//@tables.2/@keys.0">
+    <columns name="attr1" type="String"/>
+    <columns name="attr2" type="String"/>
+    <keys xsi:type="simplerdbms:Primary_Key" columns="//@tables.0/@columns.0 //@tables.1/@columns.0" pk_owner="//@tables.2"/>
+    <foreignKeys refersTo="//@tables.0/@keys.0" columns="//@tables.0/@columns.0"/>
+    <foreignKeys refersTo="//@tables.1/@keys.0" columns="//@tables.1/@columns.0"/>
+  </tables>
+</simplerdbms:Schema>

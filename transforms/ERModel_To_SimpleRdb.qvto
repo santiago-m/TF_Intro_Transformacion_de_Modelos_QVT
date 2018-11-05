@@ -60,28 +60,31 @@ mapping ERM::Package::packageToSchema() : RDB::Schema
 {
 	name := self.name;
 	kind := self.kind;
-	tables := self.elements[ERM::Entity] -> sortedBy(relationDependencies()) -> map persistentEntityToTable();
+	tables := self.elements[ERM::Entity] -> sortedBy(relationDependencies()) -> map persistentEntityToTable() -> union(
+			  self.elements[ERM::Relation] -> select(r : ERM::Relation | r.is_n_to_n()) -> map relation_n_to_n_ToTable());
 } 
 
 mapping ERM::Relation::relation_n_to_n_ToTable() : RDB::Table
 {
 	name := self.name;
 	kind := self.kind;
-	let t1 : RDB::Table = RDB::Table.allInstances() -> select(t : RDB::Table | t.name = self.entity_1.name), 
-		t2 : RDB::Table = RDB::Table.allInstances() -> select(t : RDB::Table | t.name = self.entity_2.name),
-		keysColSet : Set(RDB::Column) = t1.keys -> collect(k : RDB::Key | k.columns) ->union(t2.keys -> collect(k : RDB::Key | k.columns)),
-		attrColSet : Set(RDB::Column) = self.attributes -> map attributeTocolumn() in do {
-			columns := keysColSet ->union(attrColSet);
+	let t1 : RDB::Table = RDB::Table.allInstances() -> select(t : RDB::Table | t.name = self.entity_1.name) -> any(true), 
+		t2 : RDB::Table = RDB::Table.allInstances() -> select(t : RDB::Table | t.name = self.entity_2.name) -> any(true)
+		in do {
+			columns := self.attributes -> map attributeTocolumn() -> asSet();
+			keys := t1.map keyFromTables(t2);
+			primary_key := keys -> selectByKind(RDB::Primary_Key) -> any(true);
 			foreignKeys := t1.oclAsSet() -> including(t2) -> map foreignKeyFromTable();
-	}
+		}
+}
+
+mapping RDB::Table::keyFromTables(t : RDB::Table) : RDB::Primary_Key {
+	columns := self.columns ->union(t.columns); 
 }
 
 mapping RDB::Table::foreignKeyFromTable() : RDB::ForeignKey {
-	let pk : RDB::Primary_Key = self.primary_key in do
-	{
-		columns := pk.columns;
-		refersTo := pk;
-	}
+		columns := self.primary_key.columns;
+		refersTo := self.primary_key;
 }
 
 /*
@@ -100,10 +103,9 @@ mapping ERM::Entity::persistentEntityToTable() : RDB::Table
 {
 	name := self.name;
 	columns := self.attributes -> map attributeTocolumn() -> sortedBy(name);
-	//keys := self.keys -> excluding(self.primary_key) -> map entityKeyToTableKey();
-	primary_key := self.primary_key.map entityPKToTablePK() -> any(true).oclAsType(RDB::Primary_Key);
-	primary_key.owner := result;
-	//primary_key := self.primary_key.map entityKeyToTableKey() -> any(true).oclAsType(RDB::Primary_Key);
+	keys := self.keys -> excluding(self.primary_key) -> map entityKeyToTableKey() -> including( 
+		self.primary_key.map entityPKToTablePK() -> any(true).oclAsType(RDB::Primary_Key));
+	primary_key := keys -> select(k : RDB::Key | k.oclIsKindOf(RDB::Primary_Key)) -> first().oclAsType(RDB::Primary_Key);
 	let dependencie_tables : Set(RDB::Table) = RDB::Table.allInstances() -> select(t : RDB::Table | self.dependsOn(t)) in
 		foreignKeys := dependencie_tables -> map foreignKeyFromTable();
 	schema := self.resolveoneIn(ERM::Package::packageToSchema,RDB::Schema);
@@ -116,14 +118,12 @@ mapping ERM::Entity::persistentEntityToTable() : RDB::Table
  */
 mapping ERM::Key::entityKeyToTableKey() : RDB::Key {
 		columns := self.attribute_set -> map attributeTocolumn();
-		owner := self.resolveoneIn(ERM::Entity::persistentEntityToTable, RDB::Table);
 }
 
 mapping ERM::Primary_Key::entityPKToTablePK() : RDB::Primary_Key {
 	name := 'pk_'+self.pk_owner.name;
 	kind := 'primary_key';
 	columns := self.attribute_set -> map attributeTocolumn();
-	owner := self.resolveoneIn(ERM::Entity::persistentEntityToTable, RDB::Table);
 }
 
 /*

@@ -11,5 +11,9 @@
   <elements xsi:type="ermodel:Relation" name="Alquila" entity_1="//@elements.0" entity_2="//@elements.1" cardinality_1="1" cardinality_2="N">
     <attributes name="code" type="//@elements.3"/>
   </elements>
-  <elements xsi:type="ermodel:PrimitiveDataType" name="String" typeOpposite="//@elements.2/@attributes.0 //@elements.0/@attributes.0 //@elements.1/@attributes.0"/>
+  <elements xsi:type="ermodel:PrimitiveDataType" name="String" typeOpposite="//@elements.2/@attributes.0 //@elements.0/@attributes.0 //@elements.1/@attributes.0 //@elements.4/@attributes.0 //@elements.4/@attributes.1"/>
+  <elements xsi:type="ermodel:Relation" name="relacion_nn" entity_1="//@elements.0" entity_2="//@elements.1" cardinality_1="N" cardinality_2="N">
+    <attributes name="attr1" type="//@elements.3"/>
+    <attributes name="attr2" type="//@elements.3"/>
+  </elements>
 </ermodel:Package>
