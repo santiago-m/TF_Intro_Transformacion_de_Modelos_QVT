@@ -71,11 +71,17 @@ mapping ERM::Relation::relation_n_to_n_ToTable() : RDB::Table
 	let t1 : RDB::Table = RDB::Table.allInstances() -> select(t : RDB::Table | t.name = self.entity_1.name) -> any(true), 
 		t2 : RDB::Table = RDB::Table.allInstances() -> select(t : RDB::Table | t.name = self.entity_2.name) -> any(true)
 		in do {
-			columns := self.attributes -> map attributeTocolumn() -> asSet();
 			keys := t1.map keyFromTables(t2);
 			primary_key := keys -> selectByKind(RDB::Primary_Key) -> any(true);
 			foreignKeys := t1.oclAsSet() -> including(t2) -> map foreignKeyFromTable();
+			columns := self.attributes -> map attributeTocolumn() -> union(
+						foreignKeys -> map fk_to_column());
 		}
+}
+
+mapping RDB::ForeignKey::fk_to_column() : RDB::Column {
+	name := 'fk_'+self.columns->any(true).name;
+	foreignKeys := self;
 }
 
 mapping RDB::Table::keyFromTables(t : RDB::Table) : RDB::Primary_Key {
