@@ -27,7 +27,7 @@
         eOpposite="#//Entity/attributes"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="rowner" eType="#//Relation"
         eOpposite="#//Relation/attributes"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="type" eType="#//Classifier"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="#//Classifier"
         eOpposite="#//Classifier/typeOpposite"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Entity" eSuperTypes="#//Classifier">
@@ -49,8 +49,8 @@
     </eOperations>
     <eStructuralFeatures xsi:type="ecore:EReference" name="attributes" upperBound="-1"
         eType="#//Attribute" containment="true" eOpposite="#//Attribute/eowner"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="primary_key" lowerBound="1"
-        eType="#//Primary_Key" eOpposite="#//Primary_Key/pk_owner"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="primary_key" eType="#//Primary_Key"
+        eOpposite="#//Primary_Key/pk_owner"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="parent" eType="#//Entity"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="keys" upperBound="-1" eType="#//Key"
         containment="true" eOpposite="#//Key/k_owner"/>

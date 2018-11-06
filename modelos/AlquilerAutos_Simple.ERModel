@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ermodel:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ermodel="ERModel" xsi:schemaLocation="ERModel ../metamodelos/ERModel.ecore" name="alquiler_autos">
+  <elements xsi:type="ermodel:Entity" name="Client" primary_key="//@elements.0/@keys.0">
+    <attributes name="dni" type="//@elements.3"/>
+    <keys xsi:type="ermodel:Primary_Key" name="cliente_pk" attribute_set="//@elements.0/@attributes.0" pk_owner="//@elements.0"/>
+  </elements>
+  <elements xsi:type="ermodel:Entity" name="Vehicle" primary_key="//@elements.1/@keys.0">
+    <attributes name="patent" type="//@elements.3"/>
+    <keys xsi:type="ermodel:Primary_Key" name="vehiculo_pk" attribute_set="//@elements.1/@attributes.0" pk_owner="//@elements.1"/>
+  </elements>
+  <elements xsi:type="ermodel:Relation" name="Alquila" entity_1="//@elements.0" entity_2="//@elements.1" cardinality_1="1" cardinality_2="N">
+    <attributes name="code" type="//@elements.3"/>
+  </elements>
+  <elements xsi:type="ermodel:PrimitiveDataType" name="String" typeOpposite="//@elements.2/@attributes.0 //@elements.0/@attributes.0 //@elements.1/@attributes.0 //@elements.4/@attributes.0 //@elements.4/@attributes.1"/>
+  <elements xsi:type="ermodel:Relation" name="relacion_nn" entity_1="//@elements.0" entity_2="//@elements.1" cardinality_1="N" cardinality_2="N">
+    <attributes name="attr1" type="//@elements.3"/>
+    <attributes name="attr2" type="//@elements.3"/>
+  </elements>
+</ermodel:Package>
