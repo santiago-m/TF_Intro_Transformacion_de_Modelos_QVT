@@ -1,20 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simplerdbms:Schema xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:simplerdbms="SimpleRDBMS" xsi:schemaLocation="SimpleRDBMS ../metamodelos/SimpleRDBMS.ecore" name="alquiler_autos">
-  <tables name="Client" primary_key="//@tables.0/@keys.0">
-    <columns name="dni" type="String" foreignKeys="//@tables.2/@foreignKeys.1" keys="//@tables.0/@keys.0 //@tables.2/@keys.0"/>
-    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Client" kind="primary_key" columns="//@tables.0/@columns.0" pk_owner="//@tables.0"/>
+  <tables name="Person" primary_key="//@tables.0/@keys.0">
+    <columns name="address" type="String"/>
+    <columns name="document" type="String" keys="//@tables.0/@keys.0"/>
+    <columns name="phones" type="String"/>
+    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Person" kind="primary_key" columns="//@tables.0/@columns.1" pk_owner="//@tables.0"/>
   </tables>
-  <tables name="Vehicle" primary_key="//@tables.1/@keys.0">
-    <columns name="patent" type="String" foreignKeys="//@tables.2/@foreignKeys.0" keys="//@tables.1/@keys.0 //@tables.2/@keys.0"/>
-    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Vehicle" kind="primary_key" columns="//@tables.1/@columns.0" pk_owner="//@tables.1"/>
+  <tables name="Client"/>
+  <tables name="Partner">
+    <columns name="car_quantity" type="Integer"/>
   </tables>
-  <tables name="relacion_nn" primary_key="//@tables.2/@keys.0">
+  <tables name="Vehicle" primary_key="//@tables.3/@keys.0">
+    <columns name="brand" type="String" keys="//@tables.4/@keys.0"/>
+    <columns name="kilometers" type="Double" keys="//@tables.4/@keys.0"/>
+    <columns name="model" type="Integer" keys="//@tables.4/@keys.0"/>
+    <columns name="patent" type="String" foreignKeys="//@tables.4/@foreignKeys.1" keys="//@tables.3/@keys.0 //@tables.4/@keys.0"/>
+    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Vehicle" kind="primary_key" columns="//@tables.3/@columns.3" pk_owner="//@tables.3"/>
+    <foreignKeys/>
+  </tables>
+  <tables name="relacion_nn" primary_key="//@tables.4/@keys.0">
     <columns name="attr1" type="String"/>
     <columns name="attr2" type="String"/>
-    <columns name="fk_patent" foreignKeys="//@tables.2/@foreignKeys.0"/>
-    <columns name="fk_dni" foreignKeys="//@tables.2/@foreignKeys.1"/>
-    <keys xsi:type="simplerdbms:Primary_Key" columns="//@tables.1/@columns.0 //@tables.0/@columns.0" pk_owner="//@tables.2"/>
-    <foreignKeys refersTo="//@tables.1/@keys.0" columns="//@tables.1/@columns.0 //@tables.2/@columns.2"/>
-    <foreignKeys refersTo="//@tables.0/@keys.0" columns="//@tables.0/@columns.0 //@tables.2/@columns.3"/>
+    <columns foreignKeys="//@tables.4/@foreignKeys.0"/>
+    <columns name="fk_patent" foreignKeys="//@tables.4/@foreignKeys.1"/>
+    <keys xsi:type="simplerdbms:Primary_Key" columns="//@tables.3/@columns.0 //@tables.3/@columns.1 //@tables.3/@columns.2 //@tables.3/@columns.3" pk_owner="//@tables.4"/>
+    <foreignKeys columns="//@tables.4/@columns.2"/>
+    <foreignKeys refersTo="//@tables.3/@keys.0" columns="//@tables.3/@columns.3 //@tables.4/@columns.3"/>
   </tables>
 </simplerdbms:Schema>
