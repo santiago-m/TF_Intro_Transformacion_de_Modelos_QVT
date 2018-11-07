@@ -1,45 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<simplerdbms:Schema xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:simplerdbms="SimpleRDBMS" xsi:schemaLocation="SimpleRDBMS ../metamodelos/SimpleRDBMS.ecore" name="alquiler_autos">
-  <tables name="Person" primary_key="//@tables.0/@keys.0">
-    <columns name="address" type="String"/>
-    <columns name="document" type="String" keys="//@tables.0/@keys.0"/>
-    <columns name="phones" type="String"/>
-    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Person" kind="primary_key" columns="//@tables.0/@columns.1" pk_owner="//@tables.0"/>
-  </tables>
-  <tables name="Client" primary_key="//@tables.1/@keys.0">
-    <columns name="fk_document_Client" type="String" foreignKeys="//@tables.1/@foreignKeys.0" keys="//@tables.1/@keys.0 //@tables.4/@keys.0"/>
-    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Client" columns="//@tables.1/@columns.0" pk_owner="//@tables.1"/>
-    <foreignKeys name="fk_Person_Client" refersTo="//@tables.0/@keys.0" columns="//@tables.1/@columns.0"/>
-  </tables>
-  <tables name="Partner" primary_key="//@tables.2/@keys.0">
-    <columns name="car_quantity" type="Integer"/>
-    <columns name="fk_document_Partner" type="String" foreignKeys="//@tables.2/@foreignKeys.0" keys="//@tables.2/@keys.0"/>
-    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Partner" columns="//@tables.2/@columns.1" pk_owner="//@tables.2"/>
-    <foreignKeys name="fk_Person_Partner" refersTo="//@tables.0/@keys.0" columns="//@tables.2/@columns.1"/>
-  </tables>
-  <tables name="Vehicle" primary_key="//@tables.3/@keys.0">
-    <columns name="brand" type="String" keys="//@tables.4/@keys.0"/>
-    <columns name="kilometers" type="Double" keys="//@tables.4/@keys.0"/>
-    <columns name="model" type="Integer" keys="//@tables.4/@keys.0"/>
-    <columns name="patent" type="String" keys="//@tables.3/@keys.0 //@tables.4/@keys.0"/>
-    <columns name="fk_fk_document_Client_Vehicle" type="String" foreignKeys="//@tables.3/@foreignKeys.1 //@tables.3/@foreignKeys.0" keys="//@tables.4/@keys.0"/>
-    <columns name="fk_fk_document_Partner_Vehicle" type="String" foreignKeys="//@tables.3/@foreignKeys.1 //@tables.3/@foreignKeys.0" keys="//@tables.4/@keys.0"/>
-    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Vehicle" kind="primary_key" columns="//@tables.3/@columns.3" pk_owner="//@tables.3"/>
-    <foreignKeys name="fk_Client_Vehicle" refersTo="//@tables.1/@keys.0" columns="//@tables.3/@columns.4 //@tables.3/@columns.5"/>
-    <foreignKeys name="fk_Partner_Vehicle" refersTo="//@tables.2/@keys.0" columns="//@tables.3/@columns.4 //@tables.3/@columns.5"/>
-  </tables>
-  <tables name="relacion_nn" primary_key="//@tables.4/@keys.0">
-    <columns name="attr1" type="String"/>
-    <columns name="attr2" type="String"/>
-    <columns name="fk_model_" type="Integer" foreignKeys="//@tables.4/@foreignKeys.1 //@tables.4/@foreignKeys.0"/>
-    <columns name="fk_patent_" type="String" foreignKeys="//@tables.4/@foreignKeys.1 //@tables.4/@foreignKeys.0"/>
-    <columns name="fk_fk_fk_document_Client_Vehicle_" type="String" foreignKeys="//@tables.4/@foreignKeys.1 //@tables.4/@foreignKeys.0"/>
-    <columns name="fk_kilometers_" type="Double" foreignKeys="//@tables.4/@foreignKeys.1 //@tables.4/@foreignKeys.0"/>
-    <columns name="fk_fk_document_Client_" type="String" foreignKeys="//@tables.4/@foreignKeys.1 //@tables.4/@foreignKeys.0"/>
-    <columns name="fk_brand_" type="String" foreignKeys="//@tables.4/@foreignKeys.1 //@tables.4/@foreignKeys.0"/>
-    <columns name="fk_fk_fk_document_Partner_Vehicle_" type="String" foreignKeys="//@tables.4/@foreignKeys.1 //@tables.4/@foreignKeys.0"/>
-    <keys xsi:type="simplerdbms:Primary_Key" columns="//@tables.3/@columns.2 //@tables.3/@columns.3 //@tables.3/@columns.4 //@tables.3/@columns.1 //@tables.1/@columns.0 //@tables.3/@columns.0 //@tables.3/@columns.5" pk_owner="//@tables.4"/>
-    <foreignKeys name="fk_Client_relacion_nn" refersTo="//@tables.1/@keys.0" columns="//@tables.4/@columns.2 //@tables.4/@columns.3 //@tables.4/@columns.4 //@tables.4/@columns.5 //@tables.4/@columns.6 //@tables.4/@columns.7 //@tables.4/@columns.8"/>
-    <foreignKeys name="fk_Vehicle_relacion_nn" refersTo="//@tables.3/@keys.0" columns="//@tables.4/@columns.2 //@tables.4/@columns.3 //@tables.4/@columns.4 //@tables.4/@columns.5 //@tables.4/@columns.6 //@tables.4/@columns.7 //@tables.4/@columns.8"/>
-  </tables>
-</simplerdbms:Schema>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:simplerdbms="SimpleRDBMS" xsi:schemaLocation="SimpleRDBMS ../metamodelos/SimpleRDBMS.ecore">
+  <simplerdbms:Schema name="alquiler_autos">
+    <tables name="Client"/>
+    <tables name="Partner" primary_key="/0/@tables.1/@keys.0">
+      <columns name="car_quantity" type="Integer"/>
+      <keys xsi:type="simplerdbms:Primary_Key" pk_owner="/0/@tables.1"/>
+    </tables>
+    <tables name="Vehicle" primary_key="/0/@tables.2/@keys.0">
+      <keys xsi:type="simplerdbms:Primary_Key" name="pk_Vehicle" kind="primary_key" columns="/1" pk_owner="/0/@tables.2"/>
+      <foreignKeys name="fk_Partner_Vehicle" refersTo="/0/@tables.1/@keys.0"/>
+      <foreignKeys name="fk_Client_Vehicle"/>
+    </tables>
+    <tables name="relacion_nn" primary_key="/0/@tables.3/@keys.0">
+      <columns name="attr1" type="String"/>
+      <columns name="attr2" type="String"/>
+      <keys xsi:type="simplerdbms:Primary_Key" pk_owner="/0/@tables.3"/>
+      <foreignKeys name="fk_Client_relacion_nn"/>
+      <foreignKeys name="fk_Vehicle_relacion_nn" refersTo="/0/@tables.2/@keys.0"/>
+    </tables>
+  </simplerdbms:Schema>
+  <simplerdbms:Column name="patent" type="String" keys="/0/@tables.2/@keys.0"/>
+  <simplerdbms:Column name="kilometers" type="Double"/>
+  <simplerdbms:Column name="brand" type="String"/>
+  <simplerdbms:Column name="model" type="Integer"/>
+</xmi:XMI>
