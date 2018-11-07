@@ -59,40 +59,53 @@ mapping ERM::Package::packageToSchema() : RDB::Schema
 {
 	name := self.name;
 	kind := self.kind;
-	tables := self.elements[ERM::Entity] -> sortedBy(relationDependencies()) -> select(e : ERM::Entity | e.mustBeCreated()) -> map persistentEntityToTable() -> union(
-			  self.elements[ERM::Relation] -> select(r : ERM::Relation | r.is_n_to_n()) -> map relation_n_to_n_ToTable());
+	tables := self.elements[ERM::Entity] 
+					-> select(e : ERM::Entity | e.belongs_to_relation() or not (e.is_parent()))
+					-> sortedBy(relationDependencies()) 
+					-> map persistentEntityToTable() 
+					-> union(
+			  			self.elements[ERM::Relation] 
+			  				-> select(r : ERM::Relation | r.is_n_to_n()) 
+			  				-> map relation_n_to_n_ToTable()
+			  		   );
 } 
-
-query ERM::Entity::mustBeCreated() : Boolean {
-	return not ((ERM::Entity.allInstances() -> exists(e : ERM::Entity | e.parent = self))) or 
-			(ERM::Relation.allInstances() -> exists(r : ERM::Relation | r.entity_1 = self or r.entity_2 = self)) or
-			(self.parent <> null and self.parent.mustBeCreated());
-}
-
-query ERM::Entity::get_uncreated_parents_attributes() : Set(ERM::Attribute) {
-	if (self = null) or (self.existTable(RDB::Table.allInstances())) then
-		return null.oclAsSet()
-	else
-		return self.attributes -> union(self.parent.get_uncreated_parents_attributes())
-	endif
-}
 
 mapping ERM::Relation::relation_n_to_n_ToTable() : RDB::Table
 {
 	name := self.name;
 	kind := self.kind;
-	let t1 : RDB::Table = RDB::Table.allInstances() -> select(t : RDB::Table | t.name = self.entity_1.name) -> any(true), 
-		t2 : RDB::Table = RDB::Table.allInstances() -> select(t : RDB::Table | t.name = self.entity_2.name) -> any(true)
+	let t1 : RDB::Table = RDB::Table.allInstances() 
+				-> select(t : RDB::Table | t.name = self.entity_1.name) 
+				-> any(true), 
+		t2 : RDB::Table = RDB::Table.allInstances() 
+				-> select(t : RDB::Table | t.name = self.entity_2.name) 
+				-> any(true)
 		in do {
 			keys := t1.map keyFromTables(t2);
-			primary_key := keys -> selectByKind(RDB::Primary_Key) -> any(true);
-			let foreign_columns : Sequence(RDB::Column) = t1.oclAsSet() -> including(t2) -> collect(t : RDB::Table | t.columns) -> asSequence() -> map create_derived_columns('') in do {
-				columns := self.attributes -> map attributeTocolumn() -> sortedBy(name) -> union(
-						foreign_columns);
-				foreignKeys := t1.oclAsSet() -> including(t2) -> map foreignKeyFromTable(self.name, foreign_columns);
+			primary_key := keys 
+								-> selectByKind(RDB::Primary_Key) 
+								-> any(true);
+			let foreign_columns : Sequence(RDB::Column) = t1.oclAsSet() 
+								-> including(t2) 
+								-> collect(t : RDB::Table | t.columns) 
+								-> asSequence() 
+								-> map create_derived_columns('') 
+			in do {
+				columns := self.attributes 
+							-> map attributeToColumn() 
+							-> sortedBy(name) 
+							-> union(
+								foreign_columns
+							   );
+				foreignKeys := t1.oclAsSet() 
+							-> including(t2) 
+							-> map foreignKeyFromTable(self.name, foreign_columns);
 				if (primary_key = null) {
-					let new_pk : RDB::Primary_Key = foreign_columns -> map create_pkey_from_with_columns() in do { 
-						keys := keys -> including(new_pk);
+					let new_pk : RDB::Primary_Key = foreign_columns 
+							-> map create_pkey_from_with_columns() 
+					in do { 
+						keys := keys 
+								-> including(new_pk);
 						primary_key := new_pk;
 					};
 				}
@@ -114,50 +127,51 @@ mapping ERM::Relation::relation_n_to_n_ToTable() : RDB::Table
  */
 mapping ERM::Entity::persistentEntityToTable() : RDB::Table 
 {
-
-	if (self.parent.existTable(RDB::Table.allInstances())) {
-		name := self.name;
-		keys := self.keys -> excluding(self.primary_key) -> map entityKeyToTableKey() -> including( 
-			self.primary_key.map entityPKToTablePK() -> any(true).oclAsType(RDB::Primary_Key));
-		primary_key := keys -> select(k : RDB::Key | k.oclIsKindOf(RDB::Primary_Key)) -> first().oclAsType(RDB::Primary_Key);
-		let dependencie_tables : Set(RDB::Table) = RDB::Table.allInstances() -> select(t : RDB::Table | self.dependsOn(t)) in 
-			let foreign_columns : Sequence(RDB::Column) = dependencie_tables -> collect(t : RDB::Table | t.primary_key.columns) -> asSequence() -> map create_derived_columns(self.name) in do {
-				columns := self.attributes -> map attributeTocolumn() -> sortedBy(name) 
-							-> union(foreign_columns)
-							-> union(self.get_uncreated_parents_attributes() -> map attributeTocolumn() -> asSequence());
-				foreignKeys := dependencie_tables -> map foreignKeyFromTable(self.name, foreign_columns);
-				if (primary_key = null) {
-					let new_pk : RDB::Primary_Key = foreign_columns -> map create_pkey_from_with_columns() in do { 
-						keys := keys -> including(new_pk);
-						primary_key := new_pk;
-					};
-				};
-			};
-	}
-	else {
-		
-	}
-
 	name := self.name;
-	keys := self.keys -> excluding(self.primary_key) -> map entityKeyToTableKey() -> including( 
-		self.primary_key.map entityPKToTablePK() -> any(true).oclAsType(RDB::Primary_Key));
-	primary_key := keys -> select(k : RDB::Key | k.oclIsKindOf(RDB::Primary_Key)) -> first().oclAsType(RDB::Primary_Key);
-	columns := self.attributes -> map attributeTocolumn() -> union(
-				self.get_uncreated_parents_attributes() -> map attributeTocolumn() ->asSequence());
-	let dependencie_tables : Set(RDB::Table) = RDB::Table.allInstances() -> select(t : RDB::Table | self.dependsOn(t)) in 
-		let foreign_columns : Sequence(RDB::Column) = dependencie_tables -> collect(t : RDB::Table | t.primary_key.columns) -> asSequence() -> map create_derived_columns(self.name) in do {
-			columns := self.attributes -> map attributeTocolumn() -> sortedBy(name) 
-						-> union(foreign_columns)
-						-> union(self.get_uncreated_parents_attributes() -> map attributeTocolumn() -> asSequence());
-		foreignKeys := dependencie_tables -> map foreignKeyFromTable(self.name, foreign_columns);
-		if (primary_key = null) {
-			let new_pk : RDB::Primary_Key = foreign_columns -> map create_pkey_from_with_columns() in do { 
-				keys := keys -> including(new_pk);
-				primary_key := new_pk;
+	keys := self.keys 
+			-> excluding(self.primary_key) 
+			-> map entityKeyToTableKey() 
+			-> including( 
+				self.primary_key.map entityPKToTablePK() 
+				-> any(true).oclAsType(RDB::Primary_Key));
+	primary_key := keys 
+			-> select(k : RDB::Key | k.oclIsKindOf(RDB::Primary_Key)) 
+			-> first().oclAsType(RDB::Primary_Key);
+			
+	let dependencie_tables : Set(RDB::Table) = RDB::Table.allInstances() 
+			-> select(t : RDB::Table | self.dependsOn(t)) 
+	in 
+		let foreign_columns : Sequence(RDB::Column) = dependencie_tables 
+			-> collect(t : RDB::Table | t.primary_key.columns) 
+			-> asSequence() 
+			-> map create_derived_columns(self.name) 
+		in do {
+			columns := self.attributes 
+				-> map attributeToColumn() 
+				-> sortedBy(name) 
+				-> union(
+					foreign_columns
+				   );
+			if (not self.parent.existTable(dependencie_tables)) {
+				columns := self.get_untabulated_parents_attributes() 
+					-> derivedAttributeToColumn(self.name) 
+					-> asSet()
+					-> union(
+						columns);
 			};
+			foreignKeys := dependencie_tables 
+				-> map foreignKeyFromTable(self.name, foreign_columns);
+			if (primary_key = null) {
+				let new_pk : RDB::Primary_Key = foreign_columns 
+					-> map create_pkey_from_with_columns() 
+				in do { 
+					keys := keys 
+						-> including(new_pk);
+					primary_key := new_pk;
+				};
+			}
 		};
-	};
-	schema := self.resolveoneIn(ERM::Package::packageToSchema,RDB::Schema);
+		schema := self.resolveoneIn(ERM::Package::packageToSchema,RDB::Schema);
 }
 
 mapping RDB::Column::create_derived_columns(owner_name : String) : RDB::Column {
@@ -190,13 +204,13 @@ mapping Sequence(RDB::Column)::create_pkey_from_with_columns() : RDB::Primary_Ke
  * using a query.
  */
 mapping ERM::Key::entityKeyToTableKey() : RDB::Key {
-		columns := self.attribute_set -> map attributeTocolumn();
+		columns := self.attribute_set -> map attributeToColumn();
 }
 
 mapping ERM::Primary_Key::entityPKToTablePK() : RDB::Primary_Key {
 	name := 'pk_'+self.pk_owner.name;
 	kind := 'primary_key';
-	columns := self.attribute_set -> map attributeTocolumn();
+	columns := self.attribute_set -> map attributeToColumn();
 }
 
 /*
@@ -213,10 +227,35 @@ mapping ERM::Primary_Key::entityPKToTablePK() : RDB::Primary_Key {
  * way to allow multiple copies of columns for a given property source, as subsequent
  * mapping invocations retrieve the same resulting columns from the trace model. 
  */
-mapping ERM::Attribute::attributeTocolumn() : RDB::Column {
+mapping ERM::Attribute::attributeToColumn() : RDB::Column {
 	name := self.name;
 	kind := self.kind;
 	type := self.type.name;
+}
+
+mapping ERM::Attribute::derivedAttributeToColumn(new_owner_name : String) : RDB::Column {
+	name := self.name + '_' + new_owner_name;
+	kind := self.kind;
+	type := self.type.name;
+}
+
+query ERM::Entity::get_untabulated_parents_attributes() : Set(ERM::Attribute) {
+	if (self.parent.existTable(RDB::Table.allInstances())) then
+		return null.oclAsSet()
+	else
+		return self.parent.attributes 
+			-> union(
+					self.parent.get_untabulated_parents_attributes()
+				)
+	endif
+}
+
+query ERM::Entity::is_parent() : Boolean {
+	return ERM::Entity.allInstances() -> exists(e : ERM::Entity | e.parent = self);
+}
+
+query ERM::Entity::belongs_to_relation() : Boolean {
+	return ERM::Relation.allInstances() -> exists(r : ERM::Relation | r.entity_1 = self or r.entity_2 = self);
 }
 
 query ERM::Entity::relationDependencies() : Integer {
