@@ -152,26 +152,45 @@ mapping ERM::Entity::persistentEntityToTable() : RDB::Table
 				-> union(
 					foreign_columns
 				   );
-			if (not self.parent.existTable(dependencie_tables)) {
-				columns := self.get_untabulated_parents_attributes() 
-					-> derivedAttributeToColumn(self.name) 
-					-> asSet()
-					-> union(
-						columns);
-			};
 			foreignKeys := dependencie_tables 
 				-> map foreignKeyFromTable(self.name, foreign_columns);
-			if (primary_key = null) {
-				let new_pk : RDB::Primary_Key = foreign_columns 
-					-> map create_pkey_from_with_columns() 
-				in do { 
-					keys := keys 
-						-> including(new_pk);
-					primary_key := new_pk;
+			if (not self.parent.existTable(dependencie_tables)) {
+				let derived_columns : Set(RDB::Column) = self.get_untabulated_parents_attributes() 
+					-> derivedAttributeToColumn(self.name) 
+				in do {
+					columns := derived_columns
+						-> asSet()
+						-> union(
+							columns);
+					if (primary_key = null) {
+						primary_key := derived_columns 
+										-> select(c : RDB::Column | self.parent.primary_key.attribute_set 
+														-> collect(a : ERM::Attribute | a.name)
+												   		-> includes(c.name.substringBefore('_'+self.name))
+												  ) -> map pk_from_derived_columns(self.name);
+						primary_key.k_owner := primary_key.pk_owner;
+					}
+				}
+			}
+			else {
+				if (primary_key = null) {
+					let new_pk : RDB::Primary_Key = foreign_columns 
+						-> map create_pkey_from_with_columns() 
+					in do { 
+						keys := keys 
+							-> including(new_pk);
+						primary_key := new_pk;
+					};
 				};
 			}
 		};
 		schema := self.resolveoneIn(ERM::Package::packageToSchema,RDB::Schema);
+}
+
+mapping Set(RDB::Column)::pk_from_derived_columns(new_owner_name : String) : RDB::Primary_Key {
+	name := 'pk_' + new_owner_name;
+	kind := 'primary_key';
+	columns := self;
 }
 
 mapping RDB::Column::create_derived_columns(owner_name : String) : RDB::Column {
