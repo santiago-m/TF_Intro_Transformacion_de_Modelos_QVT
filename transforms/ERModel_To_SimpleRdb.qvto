@@ -263,7 +263,9 @@ mapping ERM::Attribute::derivedAttributeToColumn(new_owner_name : String) : RDB:
 }
 
 query ERM::Entity::get_untabulated_parents_attributes() : Set(ERM::Attribute) {
-	if (self.parent.existTable(RDB::Table.allInstances())) then
+	if (self.parent.existTable(RDB::Table.allInstances())) or
+		(self.parent = null)
+	then
 		return null.oclAsSet()
 	else
 		return self.parent.attributes 

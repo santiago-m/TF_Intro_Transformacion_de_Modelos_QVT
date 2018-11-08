@@ -29,7 +29,7 @@
     <attributes name="paid_amount" type="//@elements.9"/>
   </elements>
   <elements xsi:type="ermodel:Relation" name="Car_Owner" entity_1="//@elements.3" entity_2="//@elements.4" cardinality_1="1" cardinality_2="N"/>
-  <elements xsi:type="ermodel:Relation" name="relacion_nn" entity_1="//@elements.0" entity_2="//@elements.4" cardinality_1="N" cardinality_2="N">
+  <elements xsi:type="ermodel:Relation" name="relacion_nn" entity_1="//@elements.1" entity_2="//@elements.4" cardinality_1="N" cardinality_2="N">
     <attributes name="attr1" type="//@elements.8"/>
     <attributes name="attr2" type="//@elements.8"/>
   </elements>
