@@ -160,6 +160,7 @@ mapping ERM::Entity::multival_table(m : ERM::Multival_attribute, schema : RDB::S
 						-> asSet()
 					);
 	primary_key := columns -> asSequence() -> map create_pk_with_columns();
+	primary_key.k_owner := primary_key.pk_owner;
 	result.schema := schema; 
 }
 
@@ -202,6 +203,7 @@ mapping ERM::Multival_attribute::multival_table(owner : ERM::Entity, table_schem
 							map attributeToColumn()
 						);
 	primary_key := columns -> asSequence() -> map create_pk_with_columns();
+	
 }
 
 mapping ERM::Attribute::mattributeToColumn(owner : ERM::Entity) : RDB::Column {
