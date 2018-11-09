@@ -3,6 +3,7 @@
   <elements xsi:type="ermodel:Entity" name="Persona_Parent" primary_key="//@elements.0/@keys.0">
     <attributes name="attribute_1" type="//@elements.9"/>
     <attributes name="attribute_2" type="//@elements.9"/>
+    <attributes xsi:type="ermodel:Multival_attribute" name="multival_attr" type="//@elements.8"/>
     <keys xsi:type="ermodel:Primary_Key" name="pk_PERSON_PARENTE" attribute_set="//@elements.0/@attributes.0" pk_owner="//@elements.0"/>
   </elements>
   <elements xsi:type="ermodel:Entity" name="Person" primary_key="//@elements.1/@keys.0" parent="//@elements.0">
@@ -33,7 +34,7 @@
     <attributes name="attr1" type="//@elements.8"/>
     <attributes name="attr2" type="//@elements.8"/>
   </elements>
-  <elements xsi:type="ermodel:PrimitiveDataType" name="String" typeOpposite="//@elements.5/@attributes.0 //@elements.4/@attributes.0 //@elements.7/@attributes.0 //@elements.7/@attributes.1 //@elements.1/@attributes.0 //@elements.1/@attributes.1 //@elements.1/@attributes.2 //@elements.4/@attributes.2"/>
+  <elements xsi:type="ermodel:PrimitiveDataType" name="String" typeOpposite="//@elements.5/@attributes.0 //@elements.4/@attributes.0 //@elements.7/@attributes.0 //@elements.7/@attributes.1 //@elements.1/@attributes.0 //@elements.1/@attributes.1 //@elements.1/@attributes.2 //@elements.4/@attributes.2 //@elements.0/@attributes.2"/>
   <elements xsi:type="ermodel:PrimitiveDataType" name="Double" typeOpposite="//@elements.4/@attributes.1 //@elements.5/@attributes.2 //@elements.5/@attributes.3 //@elements.0/@attributes.1 //@elements.0/@attributes.0"/>
   <elements xsi:type="ermodel:PrimitiveDataType" name="Integer" typeOpposite="//@elements.4/@attributes.3 //@elements.3/@attributes.0"/>
   <elements xsi:type="ermodel:PrimitiveDataType" name="Date" typeOpposite="//@elements.5/@attributes.1"/>

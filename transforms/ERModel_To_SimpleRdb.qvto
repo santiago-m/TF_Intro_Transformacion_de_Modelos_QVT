@@ -255,6 +255,10 @@ mapping Sequence(RDB::Column)::create_pk_with_columns() : RDB::Primary_Key {
 	columns := self;
 }
 
+query Set(ERM::Entity)::sons() : Set(ERM::Entity) {
+	return ERM::Entity.allInstances() -> select(e : ERM::Entity | self -> includes(e.parent));
+}
+
 query ERM::Multival_attribute::multival_tables(schema : RDB::Schema) : Set(RDB::Table) {
 	return self.eowner.oclAsSet() -> map map_to_multival_table(self, schema);
 }
@@ -270,9 +274,9 @@ query Set(ERM::Entity)::map_to_multival_table(m : ERM::Multival_attribute, schem
 		in 
 		let all_tables : Set(RDB::Table) = entities_with_table 
 						-> map multival_table(m, schema)
-						->asSet()
+						-> asSet()
 						-> union(
-							(self - entities_with_table) -> map_to_multival_table(m, schema)
+							(self - entities_with_table) -> sons() -> asSet() -> map_to_multival_table(m, schema)
 						)
 		in 
 		return all_tables 
