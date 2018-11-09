@@ -21,13 +21,14 @@ mapping ERM::Package::packageToSchema() : RDB::Schema
 			  			self.elements[ERM::Relation] 
 			  				-> select(r : ERM::Relation | r.is_n_to_n()) 
 			  				-> map relation_n_to_n_ToTable()
-			  		   ) 
-			  		-> union(
+			  		   );
+	tables := tables -> union(
 						self.elements[ERM::Entity]
 						-> select(e : ERM::Entity | e.has_mval_attribute())
 						-> select(e : ERM::Entity | e.existTable(RDB::Table.allInstances()))
 						-> select(e1, e2 : ERM::Entity | e1.parent <> e2)
-						-> multival_tables()
+						-> map multival_tables(result)
+						
 					);		  		
 } 
 
@@ -104,6 +105,7 @@ mapping ERM::Relation::relation_n_to_n_ToTable() : RDB::Table
 {
 	name := self.name;
 	kind := self.kind;
+	schema := self.resolveoneIn(ERM::Package::packageToSchema,RDB::Schema);
 	let t1 : RDB::Table = RDB::Table.allInstances() 
 				-> select(t : RDB::Table | t.name = self.entity_1.name) 
 				-> any(true), 
@@ -143,16 +145,86 @@ mapping ERM::Relation::relation_n_to_n_ToTable() : RDB::Table
 		}
 }
 
-query Set(ERM::Entity)::multival_table(mva : ERM::Multival_attribute) : Set(RDB::Table) {
+mapping Set(ERM::Entity)::multival_tables(schema : RDB::Schema) : Set(RDB::Table) {
 	if (self = null) then
-		return null.oclAsSet()
+		null.oclAsSet()
 	else
-		return self.any(e : ERM::Entity | true)
-	endif
+		let current : ERM::Entity = self -> any(e : ERM::Entity | not e.all_multival_tables_created())
+		in
+			if (current = null) then
+				null.oclAsSet()
+			else
+				let created_tables : Set(RDB::Table) = current.map create_mval_tables(schema)
+				in
+					if (current.all_multival_tables_created()) then
+						created_tables -> union(
+							self -> excluding(current) -> map multival_tables(schema)
+						)
+					else
+						created_tables -> union(
+							self -> map multival_tables(schema)
+						)
+					endif
+			endif
+	endif;
+	null.oclAsSet()
+}
+
+mapping ERM::Entity::create_mval_tables(table_schema : RDB::Schema) : Set(RDB::Table) {
+	if (self = null) then
+		null.oclAsSet()
+	else
+		let current : ERM::Multival_attribute = self.multival_attributes()
+					-> any(a : ERM::Multival_attribute | not (a.table_created()))
+		in
+			if (current = null) then
+				null.oclAsSet()
+			else
+				current.map multival_table(self, table_schema)
+						-> asSet()
+						->union(self.map create_mval_tables(table_schema)) 
+			endif
+	endif;
+	null.oclAsSet()
+}
+
+mapping ERM::Multival_attribute::multival_table(owner : ERM::Entity, table_schema : RDB::Schema) : RDB::Table {
+	name := 'M' + self.name + '_' + owner.name;
+	columns := self.map mattributeToColumn(owner) 
+				-> asSequence()
+				->union(owner.primary_key.attribute_set -> 
+							map attributeToColumn()
+						);
+	primary_key := columns -> asSequence() -> map create_pk_with_columns();
+}
+
+mapping ERM::Multival_attribute::mattributeToColumn(owner : ERM::Entity) : RDB::Column {
+	name := self.name + '_' + owner.name;
+	type := self.type.name;
 }
 
 query ERM::Entity::all_multival_tables_created() : Boolean {
-	RDB::Table.allInstances() -> exists(t : RDB::Table | t.)
+	let self_tables : Set(RDB::Table) = RDB::Table.allInstances() 
+												-> select(t : RDB::Table | t.primary_key.columns -> name
+													-> includes(self.name)
+													)
+	in
+	return self_tables -> primary_key.columns -> name
+				-> includesAll(self.attributes
+									->selectByKind(ERM::Multival_attribute) 
+									-> name);
+	return false;
+}
+
+query ERM::Multival_attribute::table_created() : Boolean {
+	let self_tables : Set(RDB::Table) = RDB::Table.allInstances() 
+												-> select(t : RDB::Table | t.primary_key.columns -> name
+													-> includes(self.name)
+													)
+	in
+	return self_tables -> primary_key.columns -> name
+			->includes(self.eowner.name);
+	return false;
 }
 
 query ERM::Entity::has_mval_attribute() : Boolean {
@@ -162,6 +234,20 @@ query ERM::Entity::has_mval_attribute() : Boolean {
 		return
 			self.attributes -> selectByKind(ERM::Multival_attribute) -> notEmpty() or
 			self.parent.has_mval_attribute()
+	endif
+}
+
+query ERM::Entity::multival_attributes() : Set(ERM::Multival_attribute) {
+	if (self = null) then
+		return null.oclAsSet()
+	else
+		if (self.parent.existTable(RDB::Table.allInstances())) then
+			return self.attributes[ERM::Multival_attribute]
+		else
+			return
+				self.attributes[ERM::Multival_attribute]
+				-> union(self.parent.multival_attributes())
+		endif
 	endif
 }
 
