@@ -2,11 +2,11 @@
 <simplerdbms:Schema xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:simplerdbms="SimpleRDBMS" xsi:schemaLocation="SimpleRDBMS ../metamodelos/SimpleRDBMS.ecore" name="alquiler_autos">
   <tables name="Person" primary_key="//@tables.0/@keys.0">
     <columns name="attribute_1_Person" type="Double"/>
-    <columns name="address" type="String"/>
     <columns name="document" type="String" keys="//@tables.0/@keys.0"/>
-    <columns name="attribute_2_Person" type="Double"/>
     <columns name="phones" type="String"/>
-    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Person" kind="primary_key" columns="//@tables.0/@columns.2" pk_owner="//@tables.0"/>
+    <columns name="attribute_2_Person" type="Double"/>
+    <columns name="address" type="String"/>
+    <keys xsi:type="simplerdbms:Primary_Key" name="pk_Person" kind="primary_key" columns="//@tables.0/@columns.1" pk_owner="//@tables.0"/>
   </tables>
   <tables name="Client" primary_key="//@tables.1/@keys.0">
     <columns name="fk_document_Client" type="String" foreignKeys="//@tables.1/@foreignKeys.0" keys="//@tables.1/@keys.0"/>
